@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'David Yang'
-
 import json, logging, inspect, functools
 
 class Page(object):
@@ -13,7 +11,7 @@ class Page(object):
     def __init__(self, item_count, page_index=1, page_size=8):
         '''
         Init Pagination by item_count, page_index and page_size.
-
+        通过总共多少项/页面索引(当前页码）/页面大小初始化分页
         >>> p1 = Page(100, 1)
         >>> p1.page_count
         10
