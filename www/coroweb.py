@@ -6,7 +6,7 @@ from urllib import parse
 from aiohttp import web
 
 ## 编写装饰函数
-from www.apis import APIError
+from apis import APIError
 
 
 def get(path):

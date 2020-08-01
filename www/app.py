@@ -1,15 +1,13 @@
-import logging;
-
-from www import orm
-
+import logging
+import orm
 logging.basicConfig(level=logging.INFO)
 import asyncio, os, json, time
 from datetime import datetime
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 from config import configs
-import platform
-from .coroweb import add_routes, add_static
+from coroweb import add_routes, add_static
+
 
 ## from handlers import cookies, cookie2user, COOKIE_NAME
 
@@ -17,12 +15,12 @@ from .coroweb import add_routes, add_static
 def init_jinja2(app, **kw):
     logging.info('init jinja2...')
     options = dict(
-        autoscape = kw.get('autoscape', True),
-        block_start_string = kw.get('block_start_string', '{%'),
-        block_end_string = kw.get('block_end_string', '%}'),
-        variable_start_string = kw.get('variable_start_string', '{{'),
-        variable_end_string = kw.get('variable_end_string', '}}'),
-        auto_reload = kw.get('auto_reload', True)
+        autoscape=kw.get('autoscape', True),
+        block_start_string=kw.get('block_start_string', '{%'),
+        block_end_string=kw.get('block_end_string', '%}'),
+        variable_start_string=kw.get('variable_start_string', '{{'),
+        variable_end_string=kw.get('variable_end_string', '}}'),
+        auto_reload=kw.get('auto_reload', True)
     )
     path = kw.get('path', None)
     if path is None:
@@ -35,13 +33,16 @@ def init_jinja2(app, **kw):
             env.filters[name] = f
     app['__templating__'] = env
 
+
 ## 以下是middleware，可以把通用的功能从每个URL处理函数中拿出集中放到一个地方
 ## URL处理日志工厂
 async def logger_factory(app, handler):
     async def logger(request):
         logging.info('Request: %s %s' % (request.method, request.path))
         return (await  handler(request))
+
     return logger
+
 
 # # 认证处理工厂 -- 把当前用户绑定到  request上，并对URL/manage/进行拦截，检查当前是否是管理员身份
 # # 需要handlers.py支持，当handlers.py在API章节里完全编辑再将以下代码取消注释
@@ -73,6 +74,7 @@ async def data_factory(app, handler):
             return (await handler(request))
         return parse_data
 
+
 # 响应返回处理工厂
 async def response_factory(app, handler):
     async def response(request):
@@ -94,16 +96,16 @@ async def response_factory(app, handler):
             template = r.get('__template__')
             if template is None:
                 resp = web.Response(body=json.dumps(
-                    r, ensure_ascii=False, default=lambda o:o.__dict__).encode('utf-8'))
+                    r, ensure_ascii=False, default=lambda o: o.__dict__).encode('utf-8'))
                 return resp
             else:
                 ## 在handlers.py完全完成后,去掉下一行的双井号
-                ##r['__user__'] = request.__user__
+                r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
 
-        if isinstance(r, int) and r >=100 and r < 600:
+        if isinstance(r, int) and r >= 100 and r < 600:
             return web.Response(r)
         if isinstance(r, tuple) and len(r) == 2:
             t, m = r
@@ -113,6 +115,7 @@ async def response_factory(app, handler):
         resp = web.Response(body=str(r).encode('utf-8'))
         resp.content_type = 'text/plain;charset=utf-8'
         return resp
+
     return response
 
 
@@ -125,10 +128,11 @@ def datetime_filter(t):
         return u'%s minutes ago' % (delta // 60)
     if delta < 86400:
         return u'%s hours ago' % (delta // 3600)
-    if delta< 604800:
+    if delta < 604800:
         return u'%s days ago' % (delta // 86400)
     dt = datetime.fromtimestamp(t)
     return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
+
 
 async def init(loop):
     await orm.create_pool(loop=loop, **configs.db)
@@ -145,26 +149,24 @@ async def init(loop):
     logging.info('server started at http://127.0.0.1:9000')
     await srv.start()
 
+
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(init(loop))
     loop.run_forever()
 
 
-
-
-
-
-
 ##定义服务器响应请求的返回为'Awesome website'
 async def index(request):
     return web.Response(body=b'<h1>Awesome Website</h1>', content_type='text/html')
+
 
 ##建立服务器应用，持续监听本地9000端口的http请求，对首页"/"进行响应
 def init():
     app = web.Application()
     app.router.add_get('/', index)
     web.run_app(app, host='127.0.0.1', port=9000)
+
 
 if __name__ == "__main__":
     init()

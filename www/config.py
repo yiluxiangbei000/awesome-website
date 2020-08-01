@@ -5,7 +5,7 @@ configs = {
     }
 }
 
-from . import config_default
+import config_default
 
 class Dict(dict):
     """
