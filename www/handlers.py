@@ -1,6 +1,5 @@
-from .models import User
-from .coroweb import get
-
+from models import User
+from coroweb import get
 import asyncio
 
 @get('/')

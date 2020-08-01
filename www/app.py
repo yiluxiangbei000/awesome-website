@@ -1,5 +1,6 @@
 import logging
 import orm
+
 logging.basicConfig(level=logging.INFO)
 import asyncio, os, json, time
 from datetime import datetime
@@ -15,7 +16,7 @@ from coroweb import add_routes, add_static
 def init_jinja2(app, **kw):
     logging.info('init jinja2...')
     options = dict(
-        autoscape=kw.get('autoscape', True),
+        autoescape=kw.get('autoescape', True),
         block_start_string=kw.get('block_start_string', '{%'),
         block_end_string=kw.get('block_end_string', '%}'),
         variable_start_string=kw.get('variable_start_string', '{{'),
@@ -25,7 +26,7 @@ def init_jinja2(app, **kw):
     path = kw.get('path', None)
     if path is None:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
-    logging.info('set jinja2 template path: %s' % path)
+    logging.info('set jinja2 templates path: %s' % path)
     env = Environment(loader=FileSystemLoader(path), **options)
     filters = kw.get('filters', None)
     if filters is not None:
@@ -100,7 +101,7 @@ async def response_factory(app, handler):
                 return resp
             else:
                 ## 在handlers.py完全完成后,去掉下一行的双井号
-                r['__user__'] = request.__user__
+                # r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
@@ -140,7 +141,7 @@ async def init(loop):
     app = web.Application(middlewares=[
         logger_factory, response_factory
     ])
-    init_jinja2(app, filters=dict(datetime_filter))
+    init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, 'handlers')
     add_static(app)
     runner = web.AppRunner(app)
@@ -154,19 +155,3 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(init(loop))
     loop.run_forever()
-
-
-##定义服务器响应请求的返回为'Awesome website'
-async def index(request):
-    return web.Response(body=b'<h1>Awesome Website</h1>', content_type='text/html')
-
-
-##建立服务器应用，持续监听本地9000端口的http请求，对首页"/"进行响应
-def init():
-    app = web.Application()
-    app.router.add_get('/', index)
-    web.run_app(app, host='127.0.0.1', port=9000)
-
-
-if __name__ == "__main__":
-    init()
