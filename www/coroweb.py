@@ -1,4 +1,5 @@
 import asyncio, os, inspect, logging, functools
+import types
 
 from urllib import parse
 
@@ -172,12 +173,14 @@ def add_route(app, fn):
     if path is None or method is None:
         raise ValueError('@get or @post not defined in %s.' % str(fn))
     if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):  # 如果fn视图函数不是协程
-        fn = asyncio.coroutine(fn)  #python3.8弃用？
+        # fn = asyncio.coroutine(fn)  #python3.8弃用？
+        fn = types.coroutine(fn)
     logging.info('add route %s %s => %s' % (method, path, fn.__name__), ','.join(inspect.signature(fn).parameters.keys()))
     app.router.add_route(method, path, RequestHandler(app, fn))
 
 
 # 定义add_routes函数，自动把handler模块的所有符合条件的URL函数注册了
+# 类似于Django里的那个 urls，注册URL和路径？？
 def add_routes(app, module_name):
     n = module_name.rfind('.')  #找到.的位置
     if n == (-1):
